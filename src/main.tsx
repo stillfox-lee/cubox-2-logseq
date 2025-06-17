@@ -35,7 +35,7 @@ function main() {
     zIndex: 11,
   });
 
-  const openIconName = "template-plugin-open";
+  const openIconName = "cubox-2-logseq";
 
   logseq.provideStyle(css`
     .${openIconName} {

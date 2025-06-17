@@ -15,7 +15,7 @@ function App() {
         }}
       >
         <div ref={innerRef} className="text-size-2em">
-          Welcome to [[Logseq]] Plugins!
+          Welcome to Cubox-2-logseq Plugins!
         </div>
       </main>
     );
