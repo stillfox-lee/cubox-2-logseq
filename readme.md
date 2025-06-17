@@ -9,4 +9,5 @@
 - <https://plugins-doc.logseq.com/>
 - <https://docs.logseq.com/#/page/Plugins%2001>
 - <https://github.com/logseq/logseq-plugin-samples>
+- <https://logseq.github.io/plugins/modules.html>
 
