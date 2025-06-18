@@ -76,6 +76,23 @@ async function getFolderIdsByNames(cuboxApi: CuboxApi, folderNames: string[]): P
 }
 
 /**
+ * Check if an existing article should be updated based on timestamps
+ */
+function shouldUpdateArticle(existingPage: any, article: any): boolean {
+    const pageUpdateTime = existingPage.properties?.['updated-at'];
+    const cuboxUpdateTime = article.update_time;
+    
+    if (!pageUpdateTime || !cuboxUpdateTime) {
+        return false;
+    }
+    
+    const pageDate = new Date(pageUpdateTime);
+    const cuboxDate = new Date(cuboxUpdateTime);
+    
+    return cuboxDate > pageDate;
+}
+
+/**
  * Main sync function that fetches Cubox data and saves to Logseq
  */
 export async function syncCuboxToLogseq(
@@ -136,37 +153,25 @@ export async function syncCuboxToLogseq(
                 try {
                     // Check if article already exists in Logseq
                     const existingPage = await findExistingArticlePage(article.id);
+                    
                     if (existingPage) {
-                        // Check if Cubox article is newer than existing page
-                        const pageUpdateTime = existingPage.properties?.['updated-at'];
-                        const cuboxUpdateTime = article.update_time;
-                        
-                        if (pageUpdateTime && cuboxUpdateTime) {
-                            const pageDate = new Date(pageUpdateTime);
-                            const cuboxDate = new Date(cuboxUpdateTime);
-                            
-                            if (cuboxDate > pageDate) {
-                                // Cubox data is newer, perform incremental update
-                                await updateExistingArticlePage(existingPage, article, cuboxApi);
-                                syncedCount++;
-                            } else {
-                                skippedCount++;
-                            }
+                        // Handle existing article update
+                        if (shouldUpdateArticle(existingPage, article)) {
+                            await updateExistingArticlePage(existingPage, article, cuboxApi);
+                            syncedCount++;
                         } else {
                             skippedCount++;
                         }
-                        continue;
+                    } else {
+                        // Handle new article creation
+                        const content = await cuboxApi.getArticleDetail(article.id);
+                        if (content) {
+                            article.content = content;
+                        }
+                        
+                        await createArticlePage(article, settings.targetPageName);
+                        syncedCount++;
                     }
-
-                    // Get article content if needed
-                    const content = await cuboxApi.getArticleDetail(article.id);
-                    if (content) {
-                        article.content = content;
-                    }
-
-                    // Create page for this article
-                    await createArticlePage(article, settings.targetPageName);
-                    syncedCount++;
 
                 } catch (error) {
                     console.error(`Failed to sync article ${article.id}:`, error);
