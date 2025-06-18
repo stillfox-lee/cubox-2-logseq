@@ -21,6 +21,37 @@ The plugin fetches your collected data via the Cubox API, converts it into a Log
 
 (Detailed usage instructions, such as configuring Cubox API Key and target Logseq page, to be added)
 
+## Development
+
+### Prerequisites
+
+- [pnpm](https://pnpm.io/) - Fast, disk space efficient package manager
+- Node.js
+
+### Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/stillfox-lee/cubox-2-logseq.git
+   cd cubox-2-logseq
+   ```
+
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+
+3. Build:
+   ```bash
+   pnpm build
+   ```
+
+4. Load plugin in Logseq:
+    ```
+    Settings -> Advanced -> Developer Mode
+    Plugins -> Load unpacked plugin -> Choose the root dir of this project
+    ```
+
 ## Ref:
 
 - <https://github.com/readwiseio/logseq-readwise-official-plugin>

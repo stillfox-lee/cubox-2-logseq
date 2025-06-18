@@ -19,6 +19,37 @@
 
 （待补充详细的使用说明，例如如何配置 Cubox API Key 和目标 Logseq 页面等）
 
+## 开发
+
+### 前置要求
+
+- [pnpm](https://pnpm.io/) - 快速、节省磁盘空间的包管理器
+- Node.js（版本 16 或更高）
+
+### 开始开发
+
+1. 克隆仓库：
+   ```bash
+   git clone https://github.com/stillfox-lee/cubox-2-logseq.git
+   cd cubox-2-logseq
+   ```
+
+2. 安装依赖：
+   ```bash
+   pnpm install
+   ```
+
+3. 构建：
+   ```bash
+   pnpm build
+   ```
+
+4. 在 Logseq 中加载插件：
+    ```
+    Settings -> Advanced -> Developer Mode
+    Plugins -> Load unpacked plugin -> 选择此项目的根目录
+    ```
+
 ## Ref:
 
 - <https://github.com/readwiseio/logseq-readwise-official-plugin>
