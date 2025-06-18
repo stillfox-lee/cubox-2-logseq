@@ -1,1 +1,0 @@
-export const ALL_FOLDERS_ID = 'all_folders';

@@ -1,6 +1,7 @@
-import { ALL_FOLDERS_ID } from './modal/folderSelectModal';
-import { ALL_ITEMS } from './modal/tagSelectModal';
-import { ALL_STATUS_ID } from './modal/statusSelectModal';
+// Filter constants
+const ALL_FOLDERS_ID = 'all_folders';
+const ALL_STATUS_ID = 'all';
+const ALL_ITEMS = 'all_items';
 
 export interface CuboxArticle {
     id: string;
