@@ -98,23 +98,24 @@ function App() {
             lastSyncCardId: "",
             lastSyncCardUpdateTime: ""
         };
+        
+        // 创建重置后的完整设置对象
+        const updatedSettings = { ...settings, ...resetSettings };
+        
+        // 更新设置
         updateSettings(resetSettings);
         setLastSyncTime("");
         setShowResyncConfirm(false);
-
+        
         // 重置后立即触发同步
         (logseq.App as any).showMsg("Sync history reset. Starting full resync...", "success");
-
-        // 调用同步函数
-        await handleSync();
+        
+        // 使用重置后的设置调用同步函数
+        await performSync(updatedSettings);
     };
 
-    const cancelResync = () => {
-        setShowResyncConfirm(false);
-    };
-
-    const handleSync = async () => {
-        if (!settings.domain || !settings.apiKey) {
+    const performSync = async (syncSettings: CuboxSyncSettings) => {
+        if (!syncSettings.domain || !syncSettings.apiKey) {
             (logseq.App as any).showMsg("Please configure Cubox domain and API key first", "warning");
             return;
         }
@@ -128,13 +129,13 @@ function App() {
         setNotification("Starting sync...");
 
         try {
-            const result = await syncCuboxToLogseq(settings, setNotification);
+            const result = await syncCuboxToLogseq(syncSettings, setNotification);
             const newSyncTime = Date.now();
             const updatedSettings = {
-                ...settings,
+                ...syncSettings,
                 lastSyncTime: newSyncTime,
-                lastSyncCardId: result.lastCardId || settings.lastSyncCardId,
-                lastSyncCardUpdateTime: result.lastCardUpdateTime || settings.lastSyncCardUpdateTime
+                lastSyncCardId: result.lastCardId || syncSettings.lastSyncCardId,
+                lastSyncCardUpdateTime: result.lastCardUpdateTime || syncSettings.lastSyncCardUpdateTime
             };
             updateSettings(updatedSettings);
             setLastSyncTime(new Date(newSyncTime).toLocaleString());
@@ -151,6 +152,14 @@ function App() {
             setIsSyncing(false);
             setNotification(null);
         }
+    };
+
+    const cancelResync = () => {
+        setShowResyncConfirm(false);
+    };
+
+    const handleSync = async () => {
+        await performSync(settings);
     };
 
     if (visible) {

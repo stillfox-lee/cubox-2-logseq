@@ -137,7 +137,24 @@ export async function syncCuboxToLogseq(
                     // Check if article already exists in Logseq
                     const existingPage = await findExistingArticlePage(article.id);
                     if (existingPage) {
-                        skippedCount++;
+                        // Check if Cubox article is newer than existing page
+                        const pageUpdateTime = existingPage.properties?.['updated-at'];
+                        const cuboxUpdateTime = article.update_time;
+                        
+                        if (pageUpdateTime && cuboxUpdateTime) {
+                            const pageDate = new Date(pageUpdateTime);
+                            const cuboxDate = new Date(cuboxUpdateTime);
+                            
+                            if (cuboxDate > pageDate) {
+                                // Cubox data is newer, perform incremental update
+                                await updateExistingArticlePage(existingPage, article, cuboxApi);
+                                syncedCount++;
+                            } else {
+                                skippedCount++;
+                            }
+                        } else {
+                            skippedCount++;
+                        }
                         continue;
                     }
 
@@ -205,28 +222,80 @@ async function findExistingArticlePage(cuboxId: string): Promise<any> {
 }
 
 /**
+ * Update existing article page with full content replacement (except cubox-id)
+ */
+async function updateExistingArticlePage(existingPage: any, article: CuboxArticle, cuboxApi: CuboxApi): Promise<void> {
+    try {
+        // Get article content if needed
+        const content = await cuboxApi.getArticleDetail(article.id);
+        if (content) {
+            article.content = content;
+        }
+        
+        // Preserve the original cubox-id from existing page
+        const originalCuboxId = existingPage.properties?.['cubox-id'] || article.id;
+        const parentPageName = "Cubox"; // Default parent page name
+        
+        // Generate updated properties using the common function
+        const updatedProperties = generatePageProperties(article, parentPageName, originalCuboxId);
+        
+        // Update all properties
+        for (const [key, value] of Object.entries(updatedProperties)) {
+            await logseq.Editor.upsertBlockProperty(existingPage.uuid, key, value);
+        }
+        
+        // Get current page blocks and remove all content blocks (keep only page properties)
+        const pageBlocks = await logseq.Editor.getPageBlocksTree(existingPage.name);
+        
+        // Remove all existing content blocks
+        for (const block of pageBlocks) {
+            if ('uuid' in block && block.uuid) {
+                await logseq.Editor.removeBlock(block.uuid);
+            }
+        }
+        
+        // Generate and insert new blocks for the article content
+        const blocks = generateArticleBlocks(article);
+        
+        if (blocks.length > 0) {
+            // Insert the first block
+            const firstBlock = await logseq.Editor.insertBlock(
+                existingPage.name,
+                blocks[0].content,
+                { before: false, isPageBlock: true }
+            );
+            
+            if (!firstBlock) {
+                throw new Error("Failed to insert first block");
+            }
+            
+            // Insert remaining blocks
+            if (blocks.length > 1) {
+                const batchBlocks = blocks.slice(1).map(block => ({
+                    content: block.content,
+                    children: block.children || []
+                }));
+                
+                await logseq.Editor.insertBatchBlock(firstBlock.uuid, batchBlocks, { sibling: true });
+            }
+        }
+        
+        console.log(`Fully updated existing page: ${existingPage.name}`);
+    } catch (error) {
+        console.error(`Failed to update existing page ${existingPage.name}:`, error);
+        throw error;
+    }
+}
+
+/**
  * Create a Logseq page for a Cubox article
  */
 async function createArticlePage(article: CuboxArticle, parentPageName: string): Promise<void> {
     // Generate page title
     const pageTitle = generatePageTitle(article);
 
-    // Prepare page properties
-    const pageProperties: Record<string, any> = {
-        "cubox-url": article.cubox_url,
-        "original-url": article.url,
-        "domain": article.domain,
-        "type": article.type,
-        "created-at": formatDate(article.create_time),
-        "updated-at": formatDate(article.update_time)
-    };
-
-    // Add tags if they exist
-    if (article.tags && article.tags.length > 0) {
-        pageProperties.tags = article.tags;
-    }
-    // Add ParentPageName into tags
-    pageProperties.tags.push(parentPageName);
+    // Prepare page properties using the common function
+    const pageProperties = generatePageProperties(article, parentPageName);
 
     // Create the page
     const page = await logseq.Editor.createPage(pageTitle, pageProperties, { createFirstBlock: false });
@@ -279,6 +348,31 @@ function generatePageTitle(article: CuboxArticle): string {
         .substring(0, 100);
 
     return sanitizedTitle;
+}
+
+/**
+ * Generate page properties for Logseq page
+ */
+function generatePageProperties(article: CuboxArticle, parentPageName: string, preserveCuboxId?: string): Record<string, any> {
+    const pageProperties: Record<string, any> = {
+        "cubox-id": preserveCuboxId || article.id,
+        "cubox-url": article.cubox_url,
+        "original-url": article.url,
+        "domain": article.domain,
+        "type": article.type,
+        "created-at": formatDate(article.create_time),
+        "updated-at": formatDate(article.update_time)
+    };
+
+    // Initialize tags array and add existing tags if any
+    pageProperties.tags = article.tags && article.tags.length > 0 ? [...article.tags] : [];
+    
+    // Add parent page name to tags if not already present
+    if (!pageProperties.tags.includes(parentPageName)) {
+        pageProperties.tags.push(parentPageName);
+    }
+
+    return pageProperties;
 }
 
 /**
