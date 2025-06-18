@@ -52,6 +52,7 @@ async function getFolderIdsByNames(cuboxApi: CuboxApi, folderNames: string[]): P
 
     try {
         const folders = await cuboxApi.getFolders();
+        console.log('Available folders from API:', folders.map(f => ({ id: f.id, name: f.name, nested_name: f.nested_name })));
         const folderIds: string[] = [];
 
         for (const folderName of folderNames) {
@@ -60,6 +61,7 @@ async function getFolderIdsByNames(cuboxApi: CuboxApi, folderNames: string[]): P
                 f.nested_name.toLowerCase() === folderName.toLowerCase().trim()
             );
             if (folder) {
+                console.log(`Found folder "${folderName}" with ID: ${folder.id}`);
                 folderIds.push(folder.id);
             } else {
                 console.warn(`Folder not found: ${folderName}`);
@@ -96,8 +98,11 @@ export async function syncCuboxToLogseq(
     let folderFilter: string[] = [];
     if (settings.syncFolders.trim()) {
         const folderNames = settings.syncFolders.split(',').map(name => name.trim()).filter(name => name);
+        console.log('Sync settings - syncFolders:', settings.syncFolders);
+        console.log('Parsed folder names:', folderNames);
         setNotification?.("Getting folder information...");
         folderFilter = await getFolderIdsByNames(cuboxApi, folderNames);
+        console.log('Resolved folder IDs:', folderFilter);
 
         if (folderNames.length > 0 && folderFilter.length === 0) {
             throw new Error(`No folders found matching: ${folderNames.join(', ')}`);
@@ -109,6 +114,8 @@ export async function syncCuboxToLogseq(
     // Fetch articles in pages
     while (hasMore) {
         try {
+            console.log('Sync settings - onlyAnnotated:', settings.onlyAnnotated);
+            console.log('Passing folderFilter to API:', folderFilter.length > 0 ? folderFilter : undefined);
             const result = await cuboxApi.getArticles({
                 lastCardId: lastCardId || null,
                 lastCardUpdateTime: lastCardUpdateTime || null,

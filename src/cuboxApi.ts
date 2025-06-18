@@ -152,10 +152,14 @@ export class CuboxApi {
 
             // 添加文件夹过滤
             if (params.folderFilter && params.folderFilter.length > 0) {
+                console.log('Cubox API: Received folderFilter:', params.folderFilter);
                 // 检查是否包含 ALL_FOLDERS_ID，如果包含则不添加文件夹过滤
                 const hasAllFoldersId = params.folderFilter.includes(ALL_FOLDERS_ID);
                 if (!hasAllFoldersId) {
                     requestBody.group_filters = params.folderFilter;
+                    console.log('Cubox API: Adding group_filters to request:', params.folderFilter);
+                } else {
+                    console.log('Cubox API: Skipping folder filter due to ALL_FOLDERS_ID');
                 }
             }
 
@@ -173,6 +177,12 @@ export class CuboxApi {
                     if (params.isStarred === true) requestBody.starred = true;
                     if (params.isAnnotated === true) requestBody.annotated = true;
                 }
+            }
+
+            // 独立处理 isAnnotated 参数（不依赖 statusFilter）
+            if (params.isAnnotated === true) {
+                requestBody.annotated = true;
+                console.log('Cubox API: Adding annotated filter to request');
             }
 
             // 添加标签过滤
@@ -247,6 +257,27 @@ export class CuboxApi {
         } catch (error) {
             console.error('获取 Cubox 标签列表失败:', error);
             throw error;
+        }
+    }
+
+    /**
+     * 测试连接是否正常
+     */
+    async testConnection(): Promise<{ success: boolean; message: string }> {
+        try {
+            // 使用获取文件夹列表作为测试接口，因为这是一个简单的API调用
+            await this.getFolders();
+            return {
+                success: true,
+                message: "Connection successful!"
+            };
+        } catch (error) {
+            console.error('连接测试失败:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            return {
+                success: false,
+                message: `Connection failed: ${errorMessage}`
+            };
         }
     }
 }

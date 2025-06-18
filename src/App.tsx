@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useAppVisible } from "./utils";
 import { syncCuboxToLogseq, CuboxSyncSettings, getDefaultSettings } from "./cuboxSync";
+import { CuboxApi } from "./cuboxApi";
 
 function App() {
   const innerRef = useRef<HTMLDivElement>(null);
@@ -9,6 +10,8 @@ function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     // Load settings from logseq
@@ -48,6 +51,40 @@ function App() {
       syncFolders: updatedSettings.syncFolders,
       onlyAnnotated: updatedSettings.onlyAnnotated
     });
+  };
+
+  const handleTestConnection = async () => {
+    if (!settings.domain || !settings.apiKey) {
+      setTestResult({
+        success: false,
+        message: "Please enter domain and API key first"
+      });
+      return;
+    }
+
+    setIsTesting(true);
+    setTestResult(null);
+
+    try {
+      const api = new CuboxApi(settings.domain, settings.apiKey);
+      const result = await api.testConnection();
+      setTestResult(result);
+      
+      if (result.success) {
+        (logseq.App as any).showMsg("Connection test successful!", "success");
+      } else {
+        (logseq.App as any).showMsg(`Connection test failed: ${result.message}`, "error");
+      }
+    } catch (error) {
+      console.error("Test connection failed:", error);
+      setTestResult({
+        success: false,
+        message: "Connection test failed, please check network and configuration"
+      });
+      (logseq.App as any).showMsg("Connection test failed, please check network and configuration", "error");
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   const handleSync = async () => {
@@ -131,6 +168,60 @@ function App() {
               />
             </div>
             
+            {/* Test Connection Button */}
+            <div>
+              <button
+                onClick={handleTestConnection}
+                disabled={isTesting || !settings.domain || !settings.apiKey}
+                className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isTesting || !settings.domain || !settings.apiKey
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                    : "bg-white text-green-600 border border-green-200 hover:bg-green-50 hover:border-green-300 shadow-sm hover:shadow-md"
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  {isTesting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-300 border-t-green-600"></div>
+                      <span>Testing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span>Test Connection</span>
+                    </>
+                  )}
+                </div>
+              </button>
+              
+              {/* Test Result */}
+              {testResult && (
+                <div className={`mt-3 text-sm p-3 rounded-lg border-l-4 ${
+                  testResult.success
+                    ? "bg-green-50 text-green-800 border-l-green-400 border border-green-200"
+                    : "bg-red-50 text-red-800 border-l-red-400 border border-red-200"
+                }`}>
+                  <div className="flex items-center space-x-2">
+                    {testResult.success ? (
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    <span>{testResult.message}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Divider */}
+            <div className="border-t border-gray-200 my-6"></div>
+            
             <div>
               <label className="block text-sm font-medium mb-1">Target Page Name</label>
               <input
@@ -156,7 +247,7 @@ function App() {
                   className="w-full px-3 py-2 border rounded-md text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Examples: "Reading List", "Tech Articles, Design"
+                  Examples: &quot;Reading List&quot;, &quot;Tech Articles, Design&quot;
                 </p>
               </div>
               
@@ -179,7 +270,7 @@ function App() {
             </div>
             
             {/* Sync Controls */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 pt-2">
               <input
                 type="checkbox"
                 id="autoSync"
@@ -189,17 +280,34 @@ function App() {
               <label htmlFor="autoSync" className="text-sm">Auto sync on startup</label>
             </div>
             
+            {/* Divider */}
+            <div className="border-t border-gray-200 my-6"></div>
+            
             {/* Sync Button */}
             <button
               onClick={handleSync}
               disabled={isSyncing || !settings.domain || !settings.apiKey}
-              className={`w-full py-2 px-4 rounded-md text-white font-medium ${
+              className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
                 isSyncing || !settings.domain || !settings.apiKey
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               }`}
             >
-              {isSyncing ? "Syncing..." : "Sync Now"}
+              <div className="flex items-center justify-center space-x-2">
+                {isSyncing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-300 border-t-white"></div>
+                    <span>Syncing...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Sync Now</span>
+                  </>
+                )}
+              </div>
             </button>
             
             {/* Status */}
