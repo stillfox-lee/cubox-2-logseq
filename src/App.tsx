@@ -12,6 +12,7 @@ function App() {
     const [lastSyncTime, setLastSyncTime] = useState<string>("");
     const [isTesting, setIsTesting] = useState(false);
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [showResyncConfirm, setShowResyncConfirm] = useState(false);
 
     useEffect(() => {
         // Load settings from logseq
@@ -85,6 +86,31 @@ function App() {
         } finally {
             setIsTesting(false);
         }
+    };
+
+    const handleResync = () => {
+        setShowResyncConfirm(true);
+    };
+
+    const confirmResync = async () => {
+        const resetSettings = {
+            lastSyncTime: 0,
+            lastSyncCardId: "",
+            lastSyncCardUpdateTime: ""
+        };
+        updateSettings(resetSettings);
+        setLastSyncTime("");
+        setShowResyncConfirm(false);
+
+        // 重置后立即触发同步
+        (logseq.App as any).showMsg("Sync history reset. Starting full resync...", "success");
+
+        // 调用同步函数
+        await handleSync();
+    };
+
+    const cancelResync = () => {
+        setShowResyncConfirm(false);
     };
 
     const handleSync = async () => {
@@ -178,8 +204,8 @@ function App() {
                                 onClick={handleTestConnection}
                                 disabled={isTesting || !settings.domain || !settings.apiKey}
                                 className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${isTesting || !settings.domain || !settings.apiKey
-                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                                        : "bg-white text-green-600 border border-green-200 hover:bg-green-50 hover:border-green-300 shadow-sm hover:shadow-md"
+                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                                    : "bg-white text-green-600 border border-green-200 hover:bg-green-50 hover:border-green-300 shadow-sm hover:shadow-md"
                                     }`}
                             >
                                 <div className="flex items-center justify-center space-x-2">
@@ -202,8 +228,8 @@ function App() {
                             {/* Test Result */}
                             {testResult && (
                                 <div className={`mt-3 text-sm p-3 rounded-lg border-l-4 ${testResult.success
-                                        ? "bg-green-50 text-green-800 border-l-green-400 border border-green-200"
-                                        : "bg-red-50 text-red-800 border-l-red-400 border border-red-200"
+                                    ? "bg-green-50 text-green-800 border-l-green-400 border border-green-200"
+                                    : "bg-red-50 text-red-800 border-l-red-400 border border-red-200"
                                     }`}>
                                     <div className="flex items-center space-x-2">
                                         {testResult.success ? (
@@ -285,31 +311,49 @@ function App() {
                         {/* Divider */}
                         <div className="border-t border-gray-200 my-6"></div>
 
-                        {/* Sync Button */}
-                        <button
-                            onClick={handleSync}
-                            disabled={isSyncing || !settings.domain || !settings.apiKey}
-                            className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${isSyncing || !settings.domain || !settings.apiKey
-                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                                }`}
-                        >
-                            <div className="flex items-center justify-center space-x-2">
-                                {isSyncing ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-300 border-t-white"></div>
-                                        <span>Syncing...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                        </svg>
-                                        <span>Sync Now</span>
-                                    </>
-                                )}
-                            </div>
-                        </button>
+                        {/* Sync Buttons */}
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleSync}
+                                disabled={isSyncing || !settings.domain || !settings.apiKey}
+                                className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${isSyncing || !settings.domain || !settings.apiKey
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                                        : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                    }`}
+                            >
+                                <div className="flex items-center justify-center space-x-2">
+                                    {isSyncing ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-300 border-t-white"></div>
+                                            <span>Syncing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                            <span>Sync Now</span>
+                                        </>
+                                    )}
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={handleResync}
+                                disabled={isSyncing || !settings.domain || !settings.apiKey}
+                                className={`w-full py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${isSyncing || !settings.domain || !settings.apiKey
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                                        : "bg-white text-orange-600 border border-orange-200 hover:bg-orange-50 hover:border-orange-300 shadow-sm hover:shadow-md"
+                                    }`}
+                            >
+                                <div className="flex items-center justify-center space-x-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span>Reset & Resync All</span>
+                                </div>
+                            </button>
+                        </div>
 
                         {/* Status */}
                         {notification && (
@@ -325,6 +369,46 @@ function App() {
                         )}
                     </div>
                 </div>
+
+                {/* Resync Confirmation Modal */}
+                {showResyncConfirm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg shadow-xl max-w-md mx-4">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <div className="flex-shrink-0">
+                                    <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-medium text-gray-900">Reset Sync History</h3>
+                                </div>
+                            </div>
+                            <div className="mb-6">
+                                <p className="text-sm text-gray-600 mb-3">
+                                    This will reset your sync history and immediately fetch all articles from Cubox again.
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    <strong>Note:</strong> Existing articles in Logseq will not be duplicated.
+                                </p>
+                            </div>
+                            <div className="flex space-x-3">
+                                <button
+                                    onClick={cancelResync}
+                                    className="flex-1 py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmResync}
+                                    className="flex-1 py-2 px-4 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 transition-colors"
+                                >
+                                    Resync All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
         );
     }

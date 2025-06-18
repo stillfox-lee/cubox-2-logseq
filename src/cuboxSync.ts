@@ -345,20 +345,22 @@ async function linkToParentPage(articlePageName: string, parentPageName: string)
 
         if (!recentArticlesBlock) {
             // Create the Recent Articles section
+            // If page has existing content, insert at the top; otherwise append
+            const hasExistingContent = blocks.length > 0;
             const newBlock = await logseq.Editor.insertBlock(
                 parentPage.name,
                 "## Recent Articles",
-                { before: false, isPageBlock: true }
+                { before: hasExistingContent, isPageBlock: true }
             );
             recentArticlesBlock = newBlock || undefined;
         }
 
         if (recentArticlesBlock) {
-            // Add link to the article at the top (before: true for reverse chronological order)
+            // Add link to the article at the top of Recent Articles section (reverse chronological order)
             await logseq.Editor.insertBlock(
                 recentArticlesBlock.uuid,
                 `[[${articlePageName}]]`,
-                { before: true }
+                { before: false }
             );
         }
     }
