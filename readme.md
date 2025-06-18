@@ -19,7 +19,15 @@ The plugin fetches your collected data via the Cubox API, converts it into a Log
 
 ## Usage
 
-(Detailed usage instructions, such as configuring Cubox API Key and target Logseq page, to be added)
+### Get Cubox API Key
+
+1. Open https://cubox.pro/my/settings/extensions
+2. Enable `API Extension`, get `Cubox domain` and `API Key` as shown in the image below:
+   ![cubox-extend](./cubox-extend.png)
+
+### Configure cubox-2-logseq Plugin
+
+(Detailed configuration instructions for Cubox API Key and target Logseq page, to be added)
 
 ## Development
 
@@ -51,6 +59,16 @@ The plugin fetches your collected data via the Cubox API, converts it into a Log
     Settings -> Advanced -> Developer Mode
     Plugins -> Load unpacked plugin -> Choose the root dir of this project
     ```
+
+## Acknowledgments
+
+Thanks to the following projects and tools that helped make this project possible:
+
+- [logseq-plugin-template-react](https://github.com/pengx17/logseq-plugin-template-react) - Thanks to [@pengx17](https://github.com/pengx17) for the excellent template
+- [logseq-readwise-official-plugin](https://github.com/readwiseio/logseq-readwise-official-plugin) - Provided valuable reference and inspiration
+- [obsidian-cubox](https://github.com/OLCUBO/obsidian-cubox) - Important reference for Cubox integration
+- [Logseq](https://logseq.com/) - Thanks to this excellent knowledge management platform
+- [Claude](https://claude.ai/) - This project was developed with Claude Code
 
 ## Ref:
 

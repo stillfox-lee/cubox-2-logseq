@@ -17,6 +17,16 @@
 
 ## 使用方法
 
+### 获取 Cubox API Key
+
+1. 打开 https://cubox.pro/my/settings/extensions
+2. 开启 `API 拓展`，获取`Cubox domain` 和 `API Key` 如下图所示：
+   ![cubox-extend](./cubox-extend.png)
+
+### 配置 cubox-2-logseq 插件
+
+
+
 （待补充详细的使用说明，例如如何配置 Cubox API Key 和目标 Logseq 页面等）
 
 ## 开发
@@ -24,7 +34,7 @@
 ### 前置要求
 
 - [pnpm](https://pnpm.io/) - 快速、节省磁盘空间的包管理器
-- Node.js（版本 16 或更高）
+- Node.js
 
 ### 开始开发
 
@@ -49,6 +59,16 @@
     Settings -> Advanced -> Developer Mode
     Plugins -> Load unpacked plugin -> 选择此项目的根目录
     ```
+
+## 致谢
+
+感谢以下项目和工具对本项目的帮助：
+
+- [logseq-plugin-template-react](https://github.com/pengx17/logseq-plugin-template-react) - 感谢 [@pengx17](https://github.com/pengx17) 提供的优秀模板
+- [logseq-readwise-official-plugin](https://github.com/readwiseio/logseq-readwise-official-plugin) - 提供了宝贵的参考和灵感
+- [obsidian-cubox](https://github.com/OLCUBO/obsidian-cubox) - 为 Cubox 集成提供了重要参考
+- [Logseq](https://logseq.com/) - 感谢这个优秀的知识管理平台
+- [Claude](https://claude.ai/) - 本项目使用 Claude Code 开发
 
 ## Ref:
 
