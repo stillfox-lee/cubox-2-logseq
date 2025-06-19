@@ -397,6 +397,14 @@ function generatePageProperties(article: CuboxArticle, parentPageName: string, p
 function generateArticleBlocks(article: CuboxArticle): LogseqBlock[] {
     const blocks: LogseqBlock[] = [];
 
+    // Description
+    if (article.description) {
+        blocks.push({
+            content: "## Description",
+            children: [{ content: article.description }]
+        });
+    }
+
     // Article content
     if (article.content) {
         blocks.push({
