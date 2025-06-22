@@ -276,6 +276,15 @@ async function updateExistingArticlePage(existingPage: any, article: CuboxArticl
                 throw new Error("Failed to insert first block");
             }
 
+            // Insert children of the first block
+            if (blocks[0].children && blocks[0].children.length > 0) {
+                const firstBlockChildren = blocks[0].children.map(child => ({
+                    content: child.content,
+                    children: child.children || []
+                }));
+                await logseq.Editor.insertBatchBlock(firstBlock.uuid, firstBlockChildren, { sibling: false });
+            }
+
             // Insert remaining blocks
             if (blocks.length > 1) {
                 const batchBlocks = blocks.slice(1).map(block => ({
