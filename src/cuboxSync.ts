@@ -403,22 +403,66 @@ function generatePageProperties(article: CuboxArticle, parentPageName: string, p
 /**
  * Generate Logseq blocks from article content
  */
+/**
+ * Parse markdown content into multiple blocks
+ */
+function parseMarkdownToBlocks(content: string): LogseqBlock[] {
+    const blocks: LogseqBlock[] = [];
+    const lines = content.split('\n');
+    let currentBlock = '';
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Check if line starts with markdown header
+        if (/^#{1,6}\s/.test(line)) {
+            // If we have accumulated content, create a block for it
+            if (currentBlock.trim()) {
+                blocks.push({ content: currentBlock.trim() });
+                currentBlock = '';
+            }
+            // Start new block with header
+            currentBlock = line;
+        } else {
+            // Add line to current block
+            if (currentBlock) {
+                currentBlock += '\n' + line;
+            } else {
+                currentBlock = line;
+            }
+        }
+    }
+
+    // Add the last block if there's content
+    if (currentBlock.trim()) {
+        blocks.push({ content: currentBlock.trim() });
+    }
+
+    // If no blocks were created, return the original content as a single block
+    if (blocks.length === 0) {
+        blocks.push({ content: content });
+    }
+
+    return blocks;
+}
+
 function generateArticleBlocks(article: CuboxArticle): LogseqBlock[] {
     const blocks: LogseqBlock[] = [];
 
     // Description
     if (article.description) {
         blocks.push({
-            content: "## Description",
+            content: "# Description",
             children: [{ content: article.description }]
         });
     }
 
     // Article content
     if (article.content) {
+        const contentBlocks = parseMarkdownToBlocks(article.content);
         blocks.push({
-            content: "## Content",
-            children: [{ content: article.content }]
+            content: "# Content",
+            children: contentBlocks
         });
     }
 
@@ -429,7 +473,7 @@ function generateArticleBlocks(article: CuboxArticle): LogseqBlock[] {
         );
 
         blocks.push({
-            content: "## Highlights",
+            content: "# Highlights",
             children: highlightBlocks
         });
     }
